@@ -1,6 +1,7 @@
 import sys
 import os
 import math
+import random
 import time
 
 import pygame
@@ -19,13 +20,13 @@ class object():
     def render3D(self, screen, height, r):
         h = min(2.3,max(0, height))
         x = 75*scale + (self.x+self.dx)*math.cos(r*math.pi/180) + (self.y+self.dy)*math.sin(r*math.pi/180) 
-        y = 80*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + self.z*h/2
+        y = 90*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + self.z*h/2
         if -5 < x < 155*scale and -5 < y < 165*scale:
-            render_stack(display, bk[self.model[0]], self.model[1], (x, y,self.z), r, h, self.sc,self.p)
+            render_stack(display, bk[self.model[0]], self.model[1], (x, y,self.z), r, h, self.sc,self.p or self.model[0]==5)
 
     def getPriority(self,r):
         value = -1000 * self.z
-        value += 80*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + self.z*h/2
+        value += 90*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + int(self.z)*h/2
         return value
 
 def render_stack(surf, spritesheet, sprite_size, pos, rotation, spread=1, sc=1, alpha=False):
@@ -35,7 +36,7 @@ def render_stack(surf, spritesheet, sprite_size, pos, rotation, spread=1, sc=1, 
     
     if not alpha:
         spritesheet.convert_alpha()
-        spritesheet.set_alpha(max(50,min(255,80 - pos[2]*10)))
+        spritesheet.set_alpha(max(50,min(255,150 - pos[2]*8)))
 
     images = []
     for y in range(0, sheet_height, sprite_height):
@@ -71,12 +72,12 @@ st, et = 0, 0
 k = None
 
 map = [
-    #[[1 if (n*m)%4 else 0 for n in range (0,100)] for m in range(0,100)],
-    #[[0 for n in range (0,100)] for m in range(0,100)],
-    #]
+##    [[random.randint(0,4)//4 for _ in range (0,100)] for _ in range(0,100)],
+##    [[random.randint(0,4)//4 for _ in range (0,100)] for _ in range(0,100)],
+##    ]
     [
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 4, 0, 0, 5, 0, 0, 0, 0],
+        [0, 5, 0, 0, 5, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
         [1, 0, 5, 0, 0, 0, 0, 0, 0],
         [1, 0, 0, 0, 0, 0, 0, 5, 0],
@@ -120,11 +121,13 @@ map = [
     ],
 ]
 
-rz = len(map)//2
-rx = len(map[0])//2 
-ry = len(map[0][0])//2
+strtPos = (7,1,-3)
 
-unit = 8 * scale - 1
+rz = len(map)//2
+rx = strtPos[0]
+ry = strtPos[1]
+
+unit = 8 * scale-1
 
 Terrain = []
 for nz,mz in enumerate(map):
@@ -136,7 +139,7 @@ for nz,mz in enumerate(map):
                 else:
                     Terrain.append(object(my, bk_sz, (nx-rx,ny-ry,nz-rz), scale))
 
-player = object(0, (8,8), (0,0,-2), scale, True)
+player = object(0, (8,8), (0,0,strtPos[2]), scale, True)
 bps = 4
 
 while True:
@@ -151,16 +154,21 @@ while True:
         if -unit < box.x+box.dx < unit and -unit < box.y+box.dy < unit and player.z-unit < box.z-1 < player.z+unit:
             if box.model[0] in (1,2,3):
                 fall = False
-        
         if dp and player.getPriority(r) < box.getPriority(r):
-            player.render3D(screen,h,r/2)
+            player.render3D(screen,h,r*2)
             dp = False
         box.render3D(screen, h,r)
     if dp:
         player.render3D(screen,h,r)
         dp = False
     if fall:
-        player.z += 1
+        player.z += 8*unit*dt
+    
+    if player.z > 10:
+        player.z = strtPos[2]*unit
+        for b in Terrain:
+            b.dx = 0
+            b.dy = 0
     
     if k != None:
         if k[pygame.K_RIGHT]:
@@ -172,9 +180,9 @@ while True:
         if k[pygame.K_DOWN]:
             h += 2*dt
         if k[pygame.K_SPACE]:
-            player.z -= 0.1
+            player.z -= 10
         if k[pygame.K_LSHIFT]:
-            player.z += 0.1
+            player.z += 10
         if k[pygame.K_w]:
             flg = False
             for b in Terrain:
@@ -184,7 +192,7 @@ while True:
                     if b.model[0] in (4,6):
                         flg = True
                     elif b.model[0] in (1,2,3):
-                        player.z -= 1
+                        player.z -= unit
             if flg:
                 for b in Terrain:
                     b.dx += bps*unit*math.sin(r*math.pi/180) *dt
@@ -200,7 +208,7 @@ while True:
                     if b.model[0] in (4,6):
                         flg = True
                     elif b.model[0] in (1,2,3):
-                        player.z -= 1
+                        player.z -= unit
             if flg:
                 for b in Terrain:
                     b.dx -= bps*unit*math.sin(r*math.pi/180) *dt
@@ -216,7 +224,7 @@ while True:
                     if b.model[0] in (4,6):
                         flg = True
                     elif b.model[0] in (1,2,3):
-                        player.z -= 1
+                        player.z -= unit
             if flg:
                 for b in Terrain:
                     b.dx -= bps*unit*math.cos(r*math.pi/180) *dt
@@ -231,7 +239,7 @@ while True:
                     if b.model[0] in (4,6):
                         flg = True
                     elif b.model[0] in (1,2,3):
-                        player.z -= 1
+                        player.z -= unit
             if flg:
                 for b in Terrain:
                     b.dx += bps*unit*math.cos(r*math.pi/180) *dt
@@ -250,7 +258,7 @@ while True:
         if event.type == pygame.KEYUP:
             k = pygame.key.get_pressed()
             
-    displayText(display, f"x: {int(Terrain[0].dx*10)/10}, y: {int(Terrain[0].dy*10)/10}, z: {int(player.z*10)/10}")
+    displayText(display, f"x: {int(Terrain[0].dx)/10}, y: {int(Terrain[0].dy)/10}, z: {int(player.z)/10}")
                 
     screen.blit(pygame.transform.scale(display, screen.get_size()), (0, 0))
     pygame.display.update()
