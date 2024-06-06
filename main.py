@@ -1,8 +1,8 @@
 import sys
-import os
 import math
-import random
+import json
 import time
+import random
 
 import pygame
 
@@ -50,6 +50,15 @@ def render_stack(surf, spritesheet, sprite_size, pos, rotation, spread=1, sc=1, 
         rotated_img = pygame.transform.rotate(scaled_img, rotation)
         surf.blit(rotated_img, (pos[0] - rotated_img.get_width() // 2, pos[1] - rotated_img.get_height() // 2 - i * spread))
 
+def generateRoom(n,pos):
+    with open(f'Rooms/r{n}.txt', 'r') as room:
+        map = json.load(room)
+    for nz,mz in enumerate(map):
+        for nx, mx in enumerate(mz):
+            for ny, my in enumerate(mx):
+                if my != 0:
+                    Terrain.append(object(my, bk_sz, (nx-pos[0],ny-pos[1],nz-pos[2]), scale))
+
 def displayText(screen, text, pos=(5,5), font=None, color=(255, 255, 255)):
     font = pygame.font.SysFont(None, 16) if font == None else font
     info_surface = font.render(text, True, color)
@@ -69,80 +78,26 @@ bk_sz = (8,8)
 
 clock = pygame.time.Clock()
         
-r = 45
+r = 0
 h = 2
 st, et = 0, + 0.1
 k = None
 
-map = [ #[[0,0,0],[0,1,0],[0,0,0]]]
+strtPos = (0,0,-1)
 
-#    [[math.sin(m**2/10) - math.cos(n**2/10) > 0 for m in range (0,100)] for n in range(0,100)],
-#    [[0 for m in range (0,100)] for n in range(0,100)],
-#    ]
-    [
-        [4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 4, 4, 4, 4, 4, 4, 4, 4],
-    ],
-    [
-        [4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 4, 4, 4, 0, 4, 4, 4, 4],
-    ],
-    [
-        [4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [4, 3, 3, 3, 3, 3, 3, 3, 4],
-        [4, 3, 3, 3, 3, 3, 3, 3, 4],
-        [4, 3, 3, 3, 3, 3, 3, 3, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 0, 0, 0, 0, 0, 0, 0, 4],
-        [4, 4, 4, 4, 0, 4, 4, 4, 4],
-    ],
-    [
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3],
-    ],
-]#"""
-
-strtPos = (3,5,-3)
-
-rz = len(map)//2
+rz = 1
 rx = strtPos[0]
 ry = strtPos[1]
 
 unit = 8 * scale -1
 
 Terrain = []
-for nz,mz in enumerate(map):
-    for nx, mx in enumerate(mz):
-        for ny, my in enumerate(mx):
-            if my != 0:
-                if my:
-                    Terrain.append(object(my, bk_sz, (nx-rx,ny-ry,nz-rz), scale))
 
-for nx in range(9,100):
-    Terrain.append(object(7, bk_sz, (nx-rx,4-ry,1), scale))
+for ax in range(0,10):
+    for ay in range(0,10):
+        if (ax * ay + 1) % 2:
+            generateRoom(random.randint(1,2),(5+ax*13, 5+ay*13, 2))
+
 
 player = object(0, (8,8), (0,0,strtPos[2]), scale, True)
 bps = 4
@@ -162,7 +117,7 @@ while True:
             if box.model[0] in (1,2,3,7,8):
                 fall = False
         if dp and player.getPriority(r) < box.getPriority(r):
-            player.render3D(screen,h,0)
+            player.render3D(screen,h,r/2)
             dp = False
         box.render3D(screen, h,r)
     if dp:
