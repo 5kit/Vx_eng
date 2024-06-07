@@ -19,10 +19,10 @@ class object():
 
     def render3D(self, screen, height, r):
         h = min(2.3,max(0.8, height))
-        x = 75*scale + (self.x+self.dx)*math.cos(r*math.pi/180) + (self.y+self.dy)*math.sin(r*math.pi/180) 
-        y = 90*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + (self.z-2)*h/2
-        if -5 < x < 155*scale and -5 < y < 165*scale:
-            alpha = 0 if self.p or self.model[0]==5 else int(self.model[0]==6) * 4 + 0#20 * (self.z-10)/unit
+        x = zoom/2*scale + (self.x+self.dx)*math.cos(r*math.pi/180) + (self.y+self.dy)*math.sin(r*math.pi/180) 
+        y = zoom/1.5*scale - (self.x+self.dx)*math.sin(r*math.pi/180) + (self.y+self.dy)*math.cos(r*math.pi/180) + (1-h*5) + (self.z-2)*h/2
+        if RenderDist*scale < x < (zoom-RenderDist)*scale and RenderDist*scale < y < (zoom-RenderDist/2)*scale:
+            alpha = int(self.model[0]==6) * 4
             render_stack(display, bk[self.model[0]], self.model[1], (x, y,self.z), r,h, self.sc, alpha)
 
     def getPriority(self,r):
@@ -52,12 +52,13 @@ def render_stack(surf, spritesheet, sprite_size, pos, rotation, spread=1, sc=1, 
 
 def generateRoom(n,pos):
     with open(f'Rooms/r{n}.txt', 'r') as room:
-        map = json.load(room)
+        size, map = json.load(room)
     for nz,mz in enumerate(map):
         for nx, mx in enumerate(mz):
             for ny, my in enumerate(mx):
                 if my != 0:
                     Terrain.append(object(my, bk_sz, (nx-pos[0],ny-pos[1],nz-pos[2]), scale))
+    return size
 
 def displayText(screen, text, pos=(5,5), font=None, color=(255, 255, 255)):
     font = pygame.font.SysFont(None, 16) if font == None else font
@@ -66,17 +67,17 @@ def displayText(screen, text, pos=(5,5), font=None, color=(255, 255, 255)):
 
 pygame.init()
 
-scale = 1
+scale = 1.5
+zoom = 150
+RenderDist = 20
 
 screen = pygame.display.set_mode((800, 600), 0, 32)
-display = pygame.Surface((150*scale, 150*scale))
+display = pygame.Surface((zoom*scale, zoom*scale))
 
 TxPk = 'Models'
 
 bk = [pygame.image.load(TxPk + '/p.png'), pygame.image.load(TxPk + '/bk1.png'), pygame.image.load(TxPk + '/bk2.png'), pygame.image.load(TxPk + '/bk3.png'), pygame.image.load(TxPk + '/blk4.png'), pygame.image.load(TxPk + '/rk1.png'), pygame.image.load(TxPk + '/wat1.png'), pygame.image.load(TxPk + '/brg1.png'), pygame.image.load(TxPk + '/brg2.png')]
 bk_sz = (8,8)
-
-clock = pygame.time.Clock()
         
 r = 0
 h = 2
@@ -93,10 +94,19 @@ unit = 8 * scale -1
 
 Terrain = []
 
-for ax in range(0,10):
-    for ay in range(0,10):
-        if (ax * ay + 1) % 2:
-            generateRoom(random.randint(1,2),(5+ax*13, 5+ay*13, 2))
+maze = [
+    [1,1,1,1,0],
+    [1,0,1,0,1],
+    [0,0,1,1,1],
+    [0,1,1,0,1],
+    [0,0,1,0,2],
+]
+
+spacing = (0,0)
+for ax in range(0,len(maze)):
+    for ay in range(0,len(maze[0])):
+        if maze[ay][ax] != 0:
+            spacing = generateRoom(maze[ay][ax],(5+ax*spacing[0], 5+ay*spacing[1], 2))
 
 
 player = object(0, (8,8), (0,0,strtPos[2]), scale, True)
