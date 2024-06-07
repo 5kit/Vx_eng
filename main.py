@@ -60,6 +60,7 @@ def generateRoom(n,pos):
                     Terrain.append(object(my, bk_sz, (nx-pos[0],ny-pos[1],nz-pos[2]), scale))
     return size
 
+
 def displayText(screen, text, pos=(5,5), font=None, color=(255, 255, 255)):
     font = pygame.font.SysFont(None, 16) if font == None else font
     info_surface = font.render(text, True, color)
@@ -68,8 +69,8 @@ def displayText(screen, text, pos=(5,5), font=None, color=(255, 255, 255)):
 pygame.init()
 
 scale = 1.5
-zoom = 150
-RenderDist = 20
+zoom = 120
+RenderDist = -20
 
 screen = pygame.display.set_mode((800, 600), 0, 32)
 display = pygame.Surface((zoom*scale, zoom*scale))
